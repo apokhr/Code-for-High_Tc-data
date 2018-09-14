@@ -79,3 +79,24 @@ def Fit(FitModel, x, y, dx, dy, beta, Name="testFittiings", Title="Forgot the Ti
     fig, ax = plt.subplots()
 # ax.plot(np.linspace(0.1,0.62,1000), Drude([0.64054891, 0.54802584], np.linspace(0.1,0.62,1000)))
 ax.plot(Energy_reduced, de2_250fs_reduced, color = 'g')
+
+
+print(np.linspace(0.00,0.6,100), Drude([20, 0.5], np.linspace(0.00,0.6,100))) #this will print the data
+#This will save simulated data as txt file
+asdf = np.linspace(0.00,0.6,100)
+sdfg = Drude([20, 0.5], np.linspace(0.00,0.6,100))
+with open("test1.txt", "w") as f:
+    f.write("Energy\tEpsilon\n")
+    for i in range (100):
+        f.write(str(asdf[i])+"\t"+str(sdfg[i])+"\n")
+        
+try:
+    sdfgdf=1/1
+except Exception as ex:
+    print(ex)
+    if ex == "division by zero": #not fully functional(does not compare correctly), errors
+        print("0")
+    else:
+        print("fuck")
+finally:
+    print("always")
