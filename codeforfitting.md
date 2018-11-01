@@ -100,3 +100,164 @@ except Exception as ex:
         print("fuck")
 finally:
     print("always")
+#------------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------------------------------------------
+#scipy curve fit method
+from scipy.optimize import curve_fit
+from scipy.misc import imsave
+
+def Drude1Lorentz2_real(x, wpD, tauD, wpl1, wl1, taul1, wpl2, wl2, taul2, wpl3, wl3, taul3):
+    return 5 - wpD**2/(x**2+tauD**(-2))+ (wpl1**2*(wl1**2-x**2))/((wl1**2-x**2)**2+x**2/taul1**2)+(wpl2**2*(wl2**2-x**2))/((wl2**2-x**2)**2+x**2/taul2**2)+ (wpl3**2*(wl3**2-x**2))/((wl3**2-x**2)**2+x**2/taul3**2)
+
+def Drude1Lorentz2_imag(x, wpD, tauD, wpl1, wl1, taul1, wpl2, wl2, taul2, wpl3, wl3, taul3):
+    return (1/(x*tauD))*wpD**2/(x**2+tauD**(-2))+ (wpl1**2*x/taul1)/((wl1**2-x**2)**2+x**2/taul1**2)+ (wpl2**2*x/taul2)/((wl2**2-x**2)**2+x**2/taul2**2) + (wpl3**2*x/taul3)/((wl3**2-x**2)**2+x**2/taul3**2)
+
+def Drude1Lorentz2_real_fix(x, wpD, tauD, taul1, taul2):
+    wl1=0.6
+    wl2=2.3
+    wpl1=0.2
+    wpl2=1.8
+    return 5 - wpD**2/(x**2+tauD**(-2))+ (wpl1**2*(wl1**2-x**2))/((wl1**2-x**2)**2+x**2/taul1**2)+(wpl2**2*(wl2**2-x**2))/((wl2**2-x**2)**2+x**2/taul2**2)
+            
+
+def Drude1Lorentz2_imag_fix(x, wpD, tauD, taul1, taul2):
+    wl1=0.6
+    wl2=2.3
+    wpl1=0.2
+    wpl2=1.8
+    return (1/(x*tauD))*wpD**2/(x**2+tauD**(-2))+ (wpl1**2*x/taul1)/((wl1**2-x**2)**2+x**2/taul1**2)+ (wpl2**2*x/taul2)/((wl2**2-x**2)**2+x**2/taul2**2)
+    
+   x_data = Energy
+x_fit = np.linspace(0.2,10,1000)
+y_data_real = e1_100mw
+y_data_imag = e2_100mw
+yerr_d = de1_100mw_reduced
+
+print(x_data.shape,y_data.shape, yerr_d.shape)
+fit_func = Drude1Lorentz2_real_fix
+test_func = Drude1Lorentz2_imag_fix
+parlables = 'wpD, tauD, taul1, taul2'.split(', ')
+
+wpD_est = 0.5
+wpD_tol = .1
+tauD_est = 3.16527054
+tauD_tol = .1
+taul1_est = 4.66922027
+taul1_tol = .1
+taul2_est = 0.3993293
+taul2_tol = .1
+
+# guess = [1.38259923, 0.16527054, 0.23112961, 0.65622163, 4.66922027, 1.90463712, 2.4314406,  0.93993293]
+# bounds = ((-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf),
+#            (np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf))
+guess = [wpD_est, tauD_est, taul1_est, taul2_est]
+bounds = ((-np.inf,-np.inf,-np.inf,-np.inf),
+           (np.inf, np.inf, np.inf, np.inf))
+bounds = ((wpD_est*(1-wpD_tol),tauD_est*(1-tauD_tol),taul1_est*(1-taul1_tol),taul2_est*(1-taul2_tol)),
+           (wpD_est*(1+wpD_tol), tauD_est*(1+tauD_tol), taul1_est*(1+taul1_tol), taul2_est*(1+taul2_tol)))
+
+#----------------------------------------------------------------------
+
+popt, pcov = curve_fit(fit_func,x_data,y_data_real,p0=guess,bounds=bounds,sigma=yerr_d)
+perr = np.sqrt(np.diag(pcov))
+f, ax = plt.subplots(1,2,figsize=(9,4))
+ax[0].errorbar(x_data,y_data_real,yerr=yerr_d)
+ax[0].plot(x_fit,(fit_func(x_fit,*popt)),'--')
+ax[0].set_title('Real part')
+ax[0].set_xlabel('Energy [eV]')
+ax[1].errorbar(x_data,y_data_imag,yerr=yerr_d)
+ax[1].plot(x_fit,(test_func(x_fit,*popt)),'--')
+ax[1].set_title('imaginary part')
+ax[1].set_xlabel('Energy [eV]')
+
+for axis in ax:
+    axis.axvline(2.2, linestyle='--',alpha=0.5)
+#     axis.axvline(0.6, linestyle='-',alpha=0.5)
+    axis.axvline(popt[2], linestyle='--',alpha=0.5)
+    axis.axvline(popt[3], linestyle='--',alpha=0.5)
+    axis.set_xlim(0,5)
+
+print('par| popt | std')
+for i in range(len(popt)):
+    print('p{}: {:.3f} | {:.3f}'.format(parlables[i],popt[i],perr[i]))
+#-------------------------------------------------------------------------------------------------
+def Drude1Lorentz2_real(x, wpD, tauD, wpl1, wl1, taul1, wpl2, wl2, taul2, wpl3, wl3, taul3):
+    return 5 - wpD**2/(x**2+tauD**(-2))+ (wpl1**2*(wl1**2-x**2))/((wl1**2-x**2)**2+x**2/taul1**2)+(wpl2**2*(wl2**2-x**2))/((wl2**2-x**2)**2+x**2/taul2**2)+ (wpl3**2*(wl3**2-x**2))/((wl3**2-x**2)**2+x**2/taul3**2)
+
+def Drude1Lorentz2_imag(x, wpD, tauD, wpl1, wl1, taul1, wpl2, wl2, taul2, wpl3, wl3, taul3):
+    return (1/(x*tauD))*wpD**2/(x**2+tauD**(-2))+ (wpl1**2*x/taul1)/((wl1**2-x**2)**2+x**2/taul1**2)+ (wpl2**2*x/taul2)/((wl2**2-x**2)**2+x**2/taul2**2) + (wpl3**2*x/taul3)/((wl3**2-x**2)**2+x**2/taul3**2)
+    
+    popt , pcov = curve_fit(fit_func,x_data,y_data_real,p0=guess,bounds=bounds,sigma=yerr_d)
+perr = np.sqrt(np.diag(pcov))
+f, ax = plt.subplots(1,2,figsize=(14,7))
+ax[0].plot(x_data,y_data_real, 'o')
+ax[0].plot(x_fit,(fit_func(x_fit,*popt)),'--')
+ax[0].set_title('Real part', 'r')
+ax[0].set_xlabel('Energy [eV]', 'r')
+ax[1].plot(x_data,y_data_imag, 'o')
+ax[1].plot(x_fit,(test_func(x_fit,*popt)),'--')
+ax[1].set_title('imaginary part', 'r')
+ax[1].set_xlabel('Energy [eV]', 'r')
+
+for axis in ax:
+    axis.axvline(2.2, linestyle='--',alpha=0.5)
+    axis.axvline(1.3, linestyle='--',alpha=0.5)
+    axis.axvline(0.6, linestyle='--',alpha=0.5)
+#     axis.axvline(popt[1], linestyle='--',alpha=0.5)
+#     axis.axvline(popt[2], linestyle='--',alpha=0.5)
+#     axis.axvline(popt[3], linestyle='--',alpha=0.5)
+    axis.set_xlim(0,5)
+
+print('par| popt | std')
+for i in range(len(popt)):
+    print('p{}: {:.3f} | {:.3f}'.format(parlables[i],popt[i],perr[i]))
+f.savefig('e1_e2_best fit.png')
+# imsave('rgb_gradient.png', )
+    
+    x_data = Energy
+x_fit = np.linspace(0.2,10,1000)
+y_data_real = e1_60mw
+y_data_imag = e2_60mw
+# yerr_d = de1_100mw_reduced
+
+print(x_data.shape,y_data.shape, yerr_d.shape)
+fit_func = Drude1Lorentz2_real
+test_func = Drude1Lorentz2_imag
+parlables = 'wpD, tauD, wpl1, wl1, taul1, wpl2, wl2, taul2, wpl3, wl3, taul3'.split(', ')
+
+wpD_est = 0.55
+wpD_tol = 0.1
+tauD_est = 1.76527054
+tauD_tol = .1
+wpl1_est = 0.33
+wpl1_tol =0.1
+wl1_est = 0.59
+wl1_tol = 0.1
+taul1_est = 2.96922027
+taul1_tol = .1
+wpl2_est = 0.45
+wpl2_tol = 0.1
+wl2_est = 1.4
+wl2_tol= 0.1
+taul2_est = 1.793293
+taul2_tol = .1
+wpl3_est = 1.3
+wpl3_tol = 0.1
+wl3_est = 2.2
+wl3_tol = 0.1
+taul3_est = 1.8
+taul3_tol = 0.1
+
+
+# guess = [1.38259923, 0.16527054, 0.23112961, 0.65622163, 4.66922027, 1.90463712, 2.4314406,  0.93993293]
+# bounds = ((-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf),
+#            (np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf))
+guess = [wpD_est, tauD_est, wpl1_est, wl1_est, taul1_est, wpl2_est, wl2_est, taul2_est, wpl3_est, wl3_est, taul3_est]
+bounds = ((-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf),
+           (np.inf, np.inf, np.inf, np.inf, np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf))
+bounds = ((wpD_est*(1-wpD_tol),tauD_est*(1-tauD_tol),wpl1_est*(1-wpl1_tol), wl1_est*(1-wl1_tol),taul1_est*(1-taul1_tol), wpl2_est*(1-wpl2_tol), wl2_est*(1-wl2_tol),taul2_est*(1-taul2_tol), wpl3_est*(1-wpl3_tol), wl3_est*(1-wl3_tol), taul3_est*(1-taul3_tol)),
+           (wpD_est*(1+wpD_tol),tauD_est*(1+tauD_tol),wpl1_est*(1+wpl1_tol),wl1_est*(1+wl1_tol), taul1_est*(1+taul1_tol), wpl2_est*(1+wpl2_tol), wl2_est*(1+wl2_tol),taul2_est*(1+taul2_tol), wpl3_est*(1+wpl3_tol), wl3_est*(1+wl3_tol), taul3_est*(1+taul3_tol)))
+
+
+
+
