@@ -259,5 +259,171 @@ bounds = ((wpD_est*(1-wpD_tol),tauD_est*(1-tauD_tol),wpl1_est*(1-wpl1_tol), wl1_
            (wpD_est*(1+wpD_tol),tauD_est*(1+tauD_tol),wpl1_est*(1+wpl1_tol),wl1_est*(1+wl1_tol), taul1_est*(1+taul1_tol), wpl2_est*(1+wpl2_tol), wl2_est*(1+wl2_tol),taul2_est*(1+taul2_tol), wpl3_est*(1+wpl3_tol), wl3_est*(1+wl3_tol), taul3_est*(1+taul3_tol)))
 
 
+#---------------------------------------------------------------------------------------------------------------------------------------
+#Systematic fitting
+
+import numpy as np
+from matplotlib.pyplot import cm
+from matplotlib import pyplot as plt
+import matplotlib
+from scipy.odr import *
+from scipy.stats import chisquare
+import scipy as sp
+from scipy.optimize import curve_fit, leastsq, least_squares
+from scipy.misc import imsave
+from scipy.constants import *
+%matplotlib nbagg
+
+
+def Read(Dateiname, nValues=1, X_then_dX=True, Skiprows=1):   #X, dX, Y, dY = StandardRead(test.txt, 2)
+    Values=[]
+    if X_then_dX==True:
+        nValues=2*nValues
+    for i in range(nValues):
+        Values.append(np.array(np.loadtxt(Dateiname, skiprows=1, usecols=(i,))))
+    return Values
+def to_complex(real,imag):
+    y_comp = []
+    for i in range(len(real)):
+        y_comp.append(np.complex(real[i],imag[i])) 
+    return np.array(y_comp)
+    
+ energy_axis, *data_e1 = Read("e1_values_2ev.txt", 10, False)
+_, *data_e2 = Read("e2_values_2ev.txt", 10, False)
+data_e2 = np.array(data_e2)
+data_e1 = np.array(data_e1)
+data_labels = [0,1,5,10,20,40,60,80,100]
+print(data_e1.shape, data_e2.shape)
+
+f, ax = plt.subplots(1,2,figsize=(10,5))
+for i in range(data_e1.shape[0]):
+    ax[0].plot(energy_axis,data_e1[i,:], '-x', label=data_labels[i])
+    ax[1].plot(energy_axis,data_e2[i,:], '-x', label=data_labels[i])
+    ax[0].legend()
+    ax[1].legend()
+    
+    
+    def Drude1Lorentz2_real(x, wpD, wpl1, taul1,wpl2, taul2):
+#     wpD=0.31
+    tauD=8
+    wl1=0.64
+    wl2=2.1
+    return 5 - wpD**2/(x**2+tauD**(-2))+ (wpl1**2*(wl1**2-x**2))/((wl1**2-x**2)**2+x**2/taul1**2)+(wpl2**2*(wl2**2-x**2))/((wl2**2-x**2)**2+x**2/taul2**2)
+
+
+def Drude1Lorentz2_imag(x,wpD, wpl1, taul1,wpl2, taul2):
+#     wpD=0.31
+    tauD=8
+    wl1=0.64
+    wl2=2.1
+    return (1/(x*tauD))*wpD**2/(x**2+tauD**(-2))+ (wpl1**2*x/taul1)/((wl1**2-x**2)**2+x**2/taul1**2)+ (wpl2**2*x/taul2)/((wl2**2-x**2)**2+x**2/taul2**2)
+
+def residuals(p,y,x):
+    real = Drude1Lorentz2_real(x,*p)
+    imag = Drude1Lorentz2_imag(x,*p)
+    c = to_complex(real,imag)
+    a = y - c
+    return a.real ** 2 + a.imag ** 2
+    
+    
+   parlables = ['wpD', 'wpl1', 'taul1','wpl2', 'taul2']#, 'wpl3', 'taul3']
+
+guess = [0.0, .26, 3.17, 1.179, 2.47]
+multiguess = [[0, 0.26, 3.17, 1.179, 2.47],
+             [0.34, 0.26, 3.17, 1.179, 2.47],
+             [0.34, 0.26, 3.17, 1.179, 2.47],
+             [0.34, 0.26, 3.17, 1.179, 2.47],
+             [0.34, 0.26, 3.17, 1.179, 2.47],
+             [0.41, 0.26, 3.17, 1.179, 2.47],
+             [0.41, 0.26, 3.17, 1.179, 2.47],
+             [0.41, 0.26, 3.17, 1.179, 2.47],
+             [0.41, 0.26, 3.17, 1.179, 2.47]]
+
+bounds = [((-0.01,-np.inf,-np.inf,-np.inf,-np.inf),(0.3, np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf)),
+          ((.40,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf)),
+          ((.40,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf)),
+          ((.40,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf)),
+          ((.40,-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, np.inf))]
+# bounds = ((wpD_est*(1-wpD_tol),wpl1_est*(1-wpl1_tol),taul1_est*(1-taul1_tol), wpl2_est*(1-wpl2_tol),taul2_est*(1-taul2_tol)),
+#            (wpD_est*(1+wpD_tol),wpl1_est*(1+wpl1_tol), taul1_est*(1+taul1_tol), wpl2_est*(1+wpl2_tol),taul2_est*(1+taul2_tol)))
+
+
+n = 8
+f, ax = plt.subplots(1,2,figsize=(10,5))
+x_data = energy_axis
+x_fit = np.linspace(.3,3,100)
+
+fit_data_e1 = np.ndarray((100,n+1))
+fit_data_e2 = np.ndarray((100,n+1))
+fit_data_e1[:,0] = x_fit
+fit_data_e2[:,0] = x_fit
+
+fit_pars = {}
+for par in parlables:
+    fit_pars[par] = []
+
+popt = guess
+#variable n should be number of curves to plot (I skipped this earlier thinking that it is obvious when looking at picture - sorry my bad mistake xD): n=len(array_of_curves_to_plot)
+#version 1:
+
+color=cm.rainbow(np.linspace(0,1,n))
+for i,c in zip(range(n),color):
+
+    y_real = data_e1[i,:]
+    y_imag = data_e2[i,:]
+    z = to_complex(y_real,y_imag)
+    ax[0].plot(x_data,y_real, 'o',c=c)
+    ax[1].plot(x_data,y_imag, 'o',c=c)
+    ax[0].set_ylabel('Epsilon_1')
+    ax[0].set_xlabel('Energy [eV]')
+    ax[1].set_ylabel('Epsilon_2')
+    ax[1].set_xlabel('Energy [eV]')
+    
+    p0 = popt#multiguess[i]
+    b = bounds[i]
+    
+#     popt, cov_x, infodict, mesg, ier = leastsq(residuals, p0, args=(z,x_data), full_output=1)
+    res = least_squares(residuals, p0, args=(z,x_data), bounds=b)
+    popt = res['x']
+    for j, par in enumerate(popt):
+        fit_pars[parlables[j]].append(par)
+    
+    fit_curve_e1 = (Drude1Lorentz2_real(x_fit,*popt))
+    fit_curve_e2 = (Drude1Lorentz2_imag(x_fit,*popt))
+    fit_data_e1[:,i+1] = fit_curve_e1
+    fit_data_e2[:,i+1] = fit_curve_e2
+    
+    ax[0].plot(x_fit,fit_curve_e1,'-', c=c, label='{} mW'.format(data_labels[i]))
+    ax[1].plot(x_fit,fit_curve_e2,'-', c=c, label='{} mW'.format(data_labels[i]))
+    ax[0].legend()
+    ax[1].legend()
+#     res_percent_real = 100*(y_real-(Drude1Lorentz2_real(x_data,*popt)))/y_real
+#     res_percent_imag = 100*(y_imag-(Drude1Lorentz2_imag(x_data,*popt)))/y_imag
+#     ax[1,0].plot(x_data,res_percent_real,'-', c=c)
+#     ax[1,1].plot(x_data,res_percent_imag,'-', c=c)    
+#     ax[1,0].set_ylabel('%')
+#     ax[1,1].set_ylabel('%')
+# guess = []
+# res = leastsq(residuals, p0, args=(z,Energy), full_output=1)
+# popt, cov_x, infodict, mesg, ier  = res
+
+
+f.savefig('e1_e2_values_best fit_till2_2ev.png')
+np.savetxt('asd_e1.txt',fit_data_e1)
+np.savetxt('asd_e2.txt',fit_data_e2)
+
+f, ax = plt.subplots(2,3,figsize=(10,6))
+i=0
+for key, val in fit_pars.items():
+    a,b = i//3,i%3
+    ax[a,b].plot(data_labels[:len(val)],val, 'yo', c=c)
+    ax[a,b].set_ylabel(key)
+    ax[a,b].set_xlabel('Power [mW]')
+    i+=1
+f.savefig('e1_e2_fit_parameters_till2_2ev.png')
 
 
