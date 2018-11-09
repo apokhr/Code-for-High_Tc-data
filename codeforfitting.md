@@ -427,3 +427,8 @@ for key, val in fit_pars.items():
 f.savefig('e1_e2_fit_parameters_till2_2ev.png')
 
 
+def delta_Drude1lorentz2_real(x,wpD ):
+    return (-8192*wpD**2 * x)/(64*x**2 +1) + (0.0676*(2*x**5-1.6384*x**3+0.25402*x))/(x**4 -0.71969* x**2+ 0.16777216)**2 
+    - 2*S**2*x*g(4*x**6-29.3046*x**4-9.7682*x**2*g**2 + 233.01487)/((4.8841-x**2)**2 +x**2*g**2)^3
+    
+\frac{d}{dg}\frac{d}{dx}\left(\frac{y^2\cdot \left(x^2\cdot \:g\right)}{\left[\left(2.21\right)^2\:-x^2\right]^2+x^2\cdot \:g^2}\right)
