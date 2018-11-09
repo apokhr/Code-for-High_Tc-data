@@ -426,9 +426,63 @@ for key, val in fit_pars.items():
     i+=1
 f.savefig('e1_e2_fit_parameters_till2_2ev.png')
 
-
-def delta_Drude1lorentz2_real(x,wpD ):
-    return (-8192*wpD**2 * x)/(64*x**2 +1) + (0.0676*(2*x**5-1.6384*x**3+0.25402*x))/(x**4 -0.71969* x**2+ 0.16777216)**2 
-    - 2*S**2*x*g(4*x**6-29.3046*x**4-9.7682*x**2*g**2 + 233.01487)/((4.8841-x**2)**2 +x**2*g**2)^3
+#---------------------------------------------------------------------------------------------------------------------------------------
+def lorentz_real(w,s,w0,t):
+    num = s**2 * (w0**2 - w**2)
+    den = (w0**2 - w**2)**2 + w**2/t**-2
+    return num/den
+def lorentz_imag(w,s,w0,t):
+    num = s**2 * w / t
+    den = (w0**2 - w**2)**2 + w**2/t**-2
+    return num/den
+def de_lorentz_w0_real(w,s,w0,t):
+    num = s**2*t**2*(-2*w0**5*t**2+4*w0**3*w**2*t**2+2*w0*w**2-2*w0*w**4*t**2)
+    den = t**2*((w0**2-w**2)**2 + w**2)
+    return num/den
+def de_lorentz_w0_imag(w,s,w0,t):
+    num = -(4*s**2*w*t**3*w0*(w0**2-w**2))
+    den = (t**2*(w0**2 - w**2)**2 +w**2)**2
+    return num/den
+def de_lorentz_t_real(w,s,w0,t):
+    num = 2*s**2*w**2*t(w0**2-w**2)
+    den = (t**2*(w0**2-w**2)**2 + w**2)**2
+    return num/den
+def de_lorentz_t_imag(w,s,w0,t):
+    num = s**2*w*(-t**2*w0**4+2*w**2*t**2*w0**2-w**4*y**2+w**2)
+    den = (t**2*(w0**2-w**2)**2 + w**2)**2
+    return num/den
     
-\frac{d}{dg}\frac{d}{dx}\left(\frac{y^2\cdot \left(x^2\cdot \:g\right)}{\left[\left(2.21\right)^2\:-x^2\right]^2+x^2\cdot \:g^2}\right)
+    
+ def delta_e1(w,C,Sd,Smir,Wct,Tct):
+    Td = 8
+    Wmir = 0.64
+    Tmir = 'fix'
+    Sct = fix
+    Wct0 = 'fix from fit'
+    Tct0 = 'fix from fit'
+    eq = C
+    eq += lorentz_real(w,Sd,0,Td)
+    eq += lorentz_real(w,Smir,Wmir,Tmir)
+    eq += de_lorentz_real(w,Sct,Wct,Tct)*(Wct-Wct0)
+    eq += de_lorentz_real(w,Sct,Wct,Tct)*(Tct-Tct0)
+    return eq
+def delta_e2(w,C,Sd,Smir,Wct,Tct):
+    Td = 'from literature'
+    Wmir = fix
+    Tmir = fix
+    Sct = fix
+    Wct0 = 'fix from fit'
+    Tct0 = 'fix from fit'
+    eq = 0
+    eq += lorentz_imag(w,Sd,0,Td)
+    eq += lorentz_imag(w,Smir,Wmir,Tmir)
+    eq += de_lorentz_imag(w,Sct,Wct,Tct)*(Wct-Wct0)
+    eq += de_lorentz_imag(w,Sct,Wct,Tct)*(Tct-Tct0)
+    return eq
+
+def residuals_delta(p,y,x):
+    real = delta_e1(x,*p)
+    imag = delta_e2(x,*p)
+    c = to_complex(real,imag)
+    a = y - c
+    return a.real ** 2 + a.imag ** 2
