@@ -486,3 +486,168 @@ def residuals_delta(p,y,x):
     c = to_complex(real,imag)
     a = y - c
     return a.real ** 2 + a.imag ** 2
+#-------------------------------------------------------------------------------------------------
+def lorentz_real(x,s,w0,t):
+    num = s**2 * (w0**2 - x**2)
+    den = (w0**2 - x**2)**2 + x**2/t**-2
+    return num/den
+def lorentz_imag(x,s,w0,t):
+    num = s**2 * x / t
+    den = (w0**2 - x**2)**2 + x**2/t**-2
+    return num/den
+def de_lorentz_w0_real(x,s,w0,t):
+    num = s**2*t**2*(-2*w0**5*t**2+4*w0**3*x**2*t**2+2*w0*x**2-2*w0*x**4*t**2)
+    den = t**2*((w0**2-x**2)**2 + x**2)
+    return num/den
+def de_lorentz_w0_imag(x,s,w0,t):
+    num = -(4*s**2*x*t**3*w0*(w0**2-x**2))
+    den = (t**2*(w0**2 - x**2)**2 +x**2)**2
+    return num/den
+def de_lorentz_t_real(x,s,w0,t):
+    num = 2*s**2*x**2*t*(w0**2-x**2)
+    den = (t**2*(w0**2-x**2)**2 + x**2)**2
+    return num/den
+def de_lorentz_t_imag(x,s,w0,t):
+    num = s**2*x*(-t**2*w0**4+2*x**2*t**2*w0**2-x**4*t**2+x**2)
+    den = (t**2*(w0**2-x**2)**2 + x**2)**2
+    return num/den
+def drude_real(x, s, t):
+    num= s**2
+    den = x**2 + 1/t**2
+    return num/den
+def drude_imag(x, s, t):
+    num = s**2/(x*t)
+    den = x**2 + 1/t**2
+    return num/den
+
+
+def delta_e1(x,Sd,Smir,Wct,Tct):
+    Td = 8
+    Wmir = 0.64
+    Tmir = 3.1
+    Sct = 0.53
+    Wct0 = 2.3
+    Tct0 = 2
+    eq = 8
+    eq = drude_real(x,Sd,Td)
+    eq += lorentz_real(x,Smir,Wmir,Tmir)
+    eq += de_lorentz_w0_real(x,Sct,Wct,Tct)*(Wct-Wct)
+    eq += de_lorentz_t_real(x,Sct,Wct,Tct)*(Tct-Tct0)
+    return eq
+def delta_e2(x,Sd,Smir,Wct,Tct):
+    Td = 8
+    Wmir = 0.64
+    Tmir = 3.1
+    Sct = 0.53
+    Wct0 = 2.3
+    Tct0 = 2
+    eq = 0
+    eq += drude_imag(x,Sd,Td)
+    eq += lorentz_imag(x,Smir,Wmir,Tmir)
+    eq += de_lorentz_w0_imag(x,Sct,Wct,Tct)*(Wct-Wct0)
+    eq += de_lorentz_t_imag(x,Sct,Wct,Tct)*(Tct-Tct0)
+    return eq
+    
+    
+    def residuals_delta(p,y,x):
+    real = delta_e1(x,*p)
+    imag = delta_e2(x,*p)
+    c = to_complex(real,imag)
+    a = y - c
+    return a.real ** 2 + a.imag ** 2
+    
+    
+    parlables = ['Sd', 'Smir', 'Wct','Tct']#, 'wpl3', 'taul3']
+
+guess = [ 0.15757571,  1.81161059,  2.24411459,  0.97826626]
+multiguess = [[ 0.15757571,  1.81161059,  2.24411459,  0.97826626],
+             [ 0.15757571,  1.81161059,  2.24411459,  0.97826626],
+             [ 0.15757571,  1.81161059,  2.24411459,  0.97826626],
+             [ 0.15757571,  1.81161059,  2.24411459,  0.97826626],
+             [ 0.15757571,  1.81161059,  2.24411459,  0.97826626],
+             [ 0.15757571,  1.81161059,  2.24411459,  0.97826626],
+             [ 0.15757571,  1.81161059,  2.24411459,  0.97826626]]
+             
+
+bounds = [((-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf, )),
+          ((-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf)),
+          ((-np.inf,-np.inf,-np.inf,-np.inf),(np.inf, np.inf, np.inf, np.inf))]
+# bounds = ((wpD_est*(1-wpD_tol),wpl1_est*(1-wpl1_tol),taul1_est*(1-taul1_tol), wpl2_est*(1-wpl2_tol),taul2_est*(1-taul2_tol)),
+#            (wpD_est*(1+wpD_tol),wpl1_est*(1+wpl1_tol), taul1_est*(1+taul1_tol), wpl2_est*(1+wpl2_tol),taul2_est*(1+taul2_tol)))
+
+
+n = 4
+f, ax = plt.subplots(1,2,figsize=(10,5))
+x_data = energy_axis
+x_fit = np.linspace(.3,3,100)
+
+fit_data_de1 = np.ndarray((100,n+1))
+fit_data_de2 = np.ndarray((100,n+1))
+fit_data_de1[:,0] = x_fit
+fit_data_de2[:,0] = x_fit
+
+fit_pars = {}
+for par in parlables:
+    fit_pars[par] = []
+
+popt = guess
+
+#variable n should be number of curves to plot (I skipped this earlier thinking that it is obvious when looking at picture - sorry my bad mistake xD): n=len(array_of_curves_to_plot)
+#version 1:
+
+color=cm.rainbow(np.linspace(0,1,n))
+for i,c in zip(range(n),color):
+
+    y_real = data_de1[i,:]
+    y_imag = data_de2[i,:]
+    z = to_complex(y_real,y_imag)
+    ax[0].plot(x_data,y_real, 'o',c=c)
+    ax[1].plot(x_data,y_imag, 'o',c=c)
+    ax[0].set_ylabel('Epsilon_1')
+    ax[0].set_xlabel('Energy [eV]')
+    ax[1].set_ylabel('Epsilon_2')
+    ax[1].set_xlabel('Energy [eV]')
+    
+    p0 = multiguess[i]
+    b = bounds[i]
+    
+#     popt, cov_x, infodict, mesg, ier = leastsq(residuals, p0, args=(z,x_data), full_output=1)
+    res = least_squares(residuals_delta, p0, args=(z,x_data), bounds=b)
+    popt = res['x']
+    for j, par in enumerate(popt):
+        fit_pars[parlables[j]].append(par)
+    
+    fit_curve_de1 = (delta_e1(x_fit,*popt))
+    fit_curve_de2 = (delta_e2(x_fit,*popt))
+    fit_data_de1[:,i+1] = fit_curve_de1
+    fit_data_de2[:,i+1] = fit_curve_de2
+    
+    ax[0].plot(x_fit,fit_curve_de1,'-', c=c, label='{} mW'.format(data_labels[i]))
+    ax[1].plot(x_fit,fit_curve_de2,'-', c=c, label='{} mW'.format(data_labels[i]))
+    ax[0].legend()
+    ax[1].legend()
+#     res_percent_real = 100*(y_real-(Drude1Lorentz2_real(x_data,*popt)))/y_real
+#     res_percent_imag = 100*(y_imag-(Drude1Lorentz2_imag(x_data,*popt)))/y_imag
+#     ax[1,0].plot(x_data,res_percent_real,'-', c=c)
+#     ax[1,1].plot(x_data,res_percent_imag,'-', c=c)    
+#     ax[1,0].set_ylabel('%')
+#     ax[1,1].set_ylabel('%')
+# guess = []
+# res = leastsq(residuals, p0, args=(z,Energy), full_output=1)
+# popt, cov_x, infodict, mesg, ier  = res
+print(popt)
+
+
+f, ax = plt.subplots(2,3,figsize=(10,6))
+i=0
+for key, val in fit_pars.items():
+    a,b = i//3,i%3
+    ax[a,b].plot(data_labels[:len(val)],val, 'yo', c=c)
+    ax[a,b].set_ylabel(key)
+    ax[a,b].set_xlabel('Power [mW]')
+    i+=1
+#f.savefig('e1_e2_fit_parameters_till2_2ev.png')
